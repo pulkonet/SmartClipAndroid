@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.sdsmdg.pulkit.smartclip.MainActivity">
+
+    <ListView
+        android:id="@+id/clippedTextListView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:divider="@android:color/transparent"
+        android:transcriptMode="alwaysScroll"
+        tools:listitem="@layout/clipped_text_view"/>
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:clickable="true"
+        android:id="@+id/fab"
+        android:layout_alignEnd="@id/clippedTextListView"
+        android:layout_alignBottom="@id/clippedTextListView"
+        android:layout_marginBottom="12dp"
+        android:layout_marginRight="12dp"
+        android:elevation="100dp"
+        android:src="@android:drawable/ic_menu_add"
+        app:rippleColor="@color/colorPrimaryDark"/>
+<RelativeLayout
+    android:layout_width="match_parent"
+    android:layout_height="100dp"
+    android:background="@color/colorPrimary"
+    android:visibility="gone"
+    android:id="@+id/addClippedTextContainer"
+    android:layout_alignParentBottom="true">
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="25dp"
+        android:layout_centerHorizontal="true"
+        android:clickable="true"
+        android:background="@drawable/com_facebook_tooltip_blue_bottomnub"
+        android:id="@+id/hideAddClippedTextContainer"/>
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/addClippedText"
+        android:hint="Paste Text Here!"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Clip"
+        android:id="@+id/clipButton"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"/>
+</RelativeLayout>
+
+</RelativeLayout>

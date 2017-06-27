@@ -1,0 +1,265 @@
+package com.sdsmdg.pulkit.smartclip;
+
+import android.content.Intent;
+import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.text.format.DateFormat;
+import android.text.format.Time;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
+import android.widget.Toast;
+
+import com.firebase.ui.auth.AuthUI;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import static com.firebase.ui.auth.ui.AcquireEmailHelper.RC_SIGN_IN;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final String ANONYMOUS="anonymous";
+
+    private ProgressBar mProgressBar;
+    private ListView mClippedTextListView;
+    private TextAdapter mTextAdapter;
+    private FloatingActionButton floatingActionButton;
+    private RelativeLayout mAddClippedTextContainer;
+    private EditText mAddClippedText;
+    private Button mClipButton;
+    private Button mHideBtn;
+    private String mUsername;
+    private FirebaseDatabase mFirebaseDatabase;
+    private DatabaseReference mDatabaseReference;
+    private ChildEventListener mChildEventListener;
+    private FirebaseAuth mFirebaseAuth;
+    private FirebaseAuth.AuthStateListener mAuthStateListener;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        mUsername = ANONYMOUS;
+
+        mFirebaseDatabase=FirebaseDatabase.getInstance();
+        mDatabaseReference=mFirebaseDatabase.getReference().child("clippedtext");
+        mFirebaseAuth=FirebaseAuth.getInstance();
+
+
+        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+        mClippedTextListView = (ListView) findViewById(R.id.clippedTextListView);
+        floatingActionButton= (FloatingActionButton)findViewById(R.id.fab);
+        mAddClippedTextContainer = (RelativeLayout)findViewById(R.id.addClippedTextContainer);
+        mAddClippedText= (EditText) findViewById(R.id.addClippedText);
+        mClipButton= (Button) findViewById(R.id.clipButton);
+        mHideBtn =(Button)findViewById(R.id.hideAddClippedTextContainer);
+        mClipButton.setEnabled(false);
+
+        // Initialize message ListView and its adapter
+        List<ClippedText> clippedTexts=new ArrayList<>();
+        mTextAdapter=new TextAdapter(this,R.layout.clipped_text_view, clippedTexts);
+        mClippedTextListView.setAdapter(mTextAdapter);
+
+        // Initialize progress bar
+        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+
+        mAuthStateListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                if (user != null) {
+                    //user is logged in
+                    onSignedInInitialized(user.getEmail());
+                } else {
+                    //user is logged out
+                    onSignedOutCleanup();
+                    startActivityForResult(
+                            AuthUI.getInstance()
+                                    .createSignInIntentBuilder()
+                                    .setIsSmartLockEnabled(false)
+                                    .setProviders(
+                                            AuthUI.EMAIL_PROVIDER,
+                                            AuthUI.GOOGLE_PROVIDER)
+                                    .build(),
+                            RC_SIGN_IN ) ;
+                }
+            }
+        };
+
+        floatingActionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                floatingActionButton.setVisibility(View.GONE);
+                mAddClippedTextContainer.setVisibility(View.VISIBLE);
+            }
+        });
+        mHideBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mAddClippedText.setText("");
+                floatingActionButton.setVisibility(View.VISIBLE);
+                mAddClippedTextContainer.setVisibility(View.GONE);
+            }
+        });
+        mAddClippedText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                if (charSequence.toString().trim().length() > 0) {
+                    mClipButton.setEnabled(true);
+                } else {
+                    mClipButton.setEnabled(false);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+            }
+        });
+
+        mClipButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // TODO: Send messages on click
+                ClippedText clippedText = new ClippedText(mAddClippedText.getText().toString(), mUsername, getCurrentTime());
+                mDatabaseReference.push().setValue(clippedText);
+                // Clear input box
+                mAddClippedText.setText("");
+                floatingActionButton.setVisibility(View.VISIBLE);
+                mAddClippedTextContainer.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mFirebaseAuth.addAuthStateListener(mAuthStateListener);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
+        detachDatabaseReadListener();
+        mTextAdapter.clear();
+
+    }
+
+
+    public void onSignedInInitialized(String username){
+        mUsername = username;
+        attachDatabaseReadListener();
+
+    }
+
+    private void onSignedOutCleanup(){
+        mUsername=ANONYMOUS;
+        mTextAdapter.clear();
+        detachDatabaseReadListener();
+
+    }
+
+    private void attachDatabaseReadListener(){
+        if(mChildEventListener==null) {
+            mChildEventListener = new ChildEventListener() {
+                @Override
+                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                    ClippedText clippedText = dataSnapshot.getValue(ClippedText.class);
+                    mTextAdapter.add(clippedText);
+                }
+
+                @Override
+                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+                }
+
+                @Override
+                public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+                }
+
+                @Override
+                public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            };
+        }
+        mDatabaseReference.addChildEventListener(mChildEventListener);
+    }
+
+    private void detachDatabaseReadListener(){
+        if(mChildEventListener!=null)
+        {
+            mDatabaseReference.removeEventListener(mChildEventListener);
+            mChildEventListener=null;
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == RC_SIGN_IN) {
+            if (resultCode == RESULT_OK) {
+                Toast.makeText(this, "Signed In!", Toast.LENGTH_LONG).show();
+            }
+        } else if (resultCode == RESULT_CANCELED) {
+            Toast.makeText(this, "Sign In Canceled", Toast.LENGTH_LONG).show();
+            finish();
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.sign_out_menu:
+                AuthUI.getInstance().signOut(this);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
+    public String getCurrentTime() {
+        Date time = Calendar.getInstance().getTime();
+        return time.toString().substring(0,19);
+    }
+
+}
