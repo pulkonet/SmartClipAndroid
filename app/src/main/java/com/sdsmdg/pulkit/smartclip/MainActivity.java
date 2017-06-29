@@ -5,6 +5,8 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.format.DateFormat;
@@ -56,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
     private ChildEventListener mChildEventListener;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
+    private RecyclerView rvClippedText;
+    private  ArrayList<ClippedText> clippedTexts;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
-        mClippedTextListView = (ListView) findViewById(R.id.clippedTextListView);
+        rvClippedText = (RecyclerView) findViewById(R.id.clippedTextRecyclerView);
         floatingActionButton= (FloatingActionButton)findViewById(R.id.fab);
         mAddClippedTextContainer = (RelativeLayout)findViewById(R.id.addClippedTextContainer);
         mAddClippedText= (EditText) findViewById(R.id.addClippedText);
@@ -78,10 +82,10 @@ public class MainActivity extends AppCompatActivity {
         mClipButton.setEnabled(false);
 
         // Initialize message ListView and its adapter
-        List<ClippedText> clippedTexts=new ArrayList<>();
-        mTextAdapter=new TextAdapter(this,R.layout.clipped_text_view, clippedTexts);
-        mClippedTextListView.setAdapter(mTextAdapter);
-
+        clippedTexts=new ArrayList<>();
+        mTextAdapter=new TextAdapter(this,clippedTexts);
+        rvClippedText.setAdapter(mTextAdapter);
+        rvClippedText.setLayoutManager(new LinearLayoutManager(this));
         // Initialize progress bar
         mProgressBar.setVisibility(ProgressBar.INVISIBLE);
 
@@ -167,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
         detachDatabaseReadListener();
-        mTextAdapter.clear();
+//        mTextAdapter.clear();
 
     }
 
@@ -180,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void onSignedOutCleanup(){
         mUsername=ANONYMOUS;
-        mTextAdapter.clear();
+//        mTextAdapter.clear();
         detachDatabaseReadListener();
 
     }
@@ -191,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                     ClippedText clippedText = dataSnapshot.getValue(ClippedText.class);
-                    mTextAdapter.add(clippedText);
+                    addNewClippedText(clippedText);
                 }
 
                 @Override
@@ -260,6 +264,11 @@ public class MainActivity extends AppCompatActivity {
     public String getCurrentTime() {
         Date time = Calendar.getInstance().getTime();
         return time.toString().substring(0,19);
+    }
+
+    public void addNewClippedText(ClippedText clippedText){
+        clippedTexts.add(0, clippedText);
+        mTextAdapter.notifyItemInserted(0);
     }
 
 }

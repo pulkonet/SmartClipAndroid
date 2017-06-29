@@ -6,13 +6,13 @@
     android:layout_height="match_parent"
     tools:context="com.sdsmdg.pulkit.smartclip.MainActivity">
 
-    <ListView
-        android:id="@+id/clippedTextListView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:divider="@android:color/transparent"
-        android:transcriptMode="alwaysScroll"
-        tools:listitem="@layout/clipped_text_view"/>
+<android.support.v7.widget.RecyclerView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/clippedTextRecyclerView"
+    >
+
+</android.support.v7.widget.RecyclerView>
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -28,8 +28,8 @@
         android:layout_gravity="bottom"
         android:clickable="true"
         android:id="@+id/fab"
-        android:layout_alignEnd="@id/clippedTextListView"
-        android:layout_alignBottom="@id/clippedTextListView"
+        android:layout_alignEnd="@id/clippedTextRecyclerView"
+        android:layout_alignBottom="@id/clippedTextRecyclerView"
         android:layout_marginBottom="12dp"
         android:layout_marginRight="12dp"
         android:elevation="100dp"
