@@ -179,9 +179,18 @@ public class MainActivity extends AppCompatActivity {
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int swipeDir) {
                 clippedTexts.remove(viewHolder.getAdapterPosition());
                 mTextAdapter.notifyItemRemoved(viewHolder.getAdapterPosition());
-                Snackbar mySnackbar = Snackbar.make(findViewById(R.id.container),"My Snacks", Snackbar.LENGTH_SHORT);
+                final Snackbar mySnackbar = Snackbar.make(findViewById(R.id.container),"The clip has been deleted!", Snackbar.LENGTH_LONG);
+                mySnackbar.setAction("UNDO", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        //bring back the view
+                    Toast.makeText(getApplicationContext(),"Oh yeah",Toast.LENGTH_LONG).show();
+                          }
+                });
+                mySnackbar.setActionTextColor(Color.RED);
                 mySnackbar.show();
                 }
+                //kill the view completely some time after this snackbar goes down
         };
 
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
