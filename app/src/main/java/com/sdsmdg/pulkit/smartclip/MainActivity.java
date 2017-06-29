@@ -1,12 +1,20 @@
 package com.sdsmdg.pulkit.smartclip;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.format.DateFormat;
@@ -15,6 +23,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -48,13 +57,13 @@ public class MainActivity extends AppCompatActivity {
     private ListView mClippedTextListView;
     private TextAdapter mTextAdapter;
     private FloatingActionButton floatingActionButton;
-    private RelativeLayout mAddClippedTextContainer;
+    private RelativeLayout mAddClippedTextContainer, relativeLayout;
     private EditText mAddClippedText;
     private Button mClipButton;
     private Button mHideBtn;
     private String mUsername;
     private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mDatabaseReference;
+    private DatabaseReference mDatabaseReference, db_node;
     private ChildEventListener mChildEventListener;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
@@ -76,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
         rvClippedText = (RecyclerView) findViewById(R.id.clippedTextRecyclerView);
         floatingActionButton= (FloatingActionButton)findViewById(R.id.fab);
         mAddClippedTextContainer = (RelativeLayout)findViewById(R.id.addClippedTextContainer);
+
         mAddClippedText= (EditText) findViewById(R.id.addClippedText);
         mClipButton= (Button) findViewById(R.id.clipButton);
         mHideBtn =(Button)findViewById(R.id.hideAddClippedTextContainer);
@@ -158,6 +168,24 @@ public class MainActivity extends AppCompatActivity {
                 mAddClippedTextContainer.setVisibility(View.GONE);
             }
         });
+
+        ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int swipeDir) {
+                clippedTexts.remove(viewHolder.getAdapterPosition());
+                mTextAdapter.notifyItemRemoved(viewHolder.getAdapterPosition());
+                Snackbar mySnackbar = Snackbar.make(findViewById(R.id.container),"My Snacks", Snackbar.LENGTH_SHORT);
+                mySnackbar.show();
+                }
+        };
+
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
+        itemTouchHelper.attachToRecyclerView(rvClippedText);
     }
 
     @Override
